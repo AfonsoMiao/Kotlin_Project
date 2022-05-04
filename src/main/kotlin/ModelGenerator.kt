@@ -46,6 +46,7 @@ class ModelGenerator {
     // enumeration --> attribute
     // collection --> function that creates other models (recursively) and after receive it add to children
     // Everything that it's in the list --> CompositeEntity
+    // TODO meter tudo numa mesma função e usar as anotações
     fun createModel(o: Any, parent: CompositeEntity? = null): Entity {
         val c = o::class
         var e = CompositeEntity(name = c.findAnnotation<XmlName>()!!.name, parent = parent)

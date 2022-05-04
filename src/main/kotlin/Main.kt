@@ -163,7 +163,7 @@ fun CompositeEntity.buildXML(criteria: (Entity) -> Boolean = {true}): Entity? {
 
         override fun endVisit(c: CompositeEntity) {
             //auxSimple = null
-            auxComposite = null
+            auxComposite = null // TODO
         }
     }
     accept(v)
