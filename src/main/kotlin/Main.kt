@@ -95,9 +95,9 @@ class CompositeEntity(name: String = "", attrs: MutableList<Attribute> = mutable
         if (children.isNotEmpty()) {
             var attrString = buildAttrs()
             println("<$name $attrString>")
-            if (text.isNotEmpty() && attrs.isEmpty()) {
-                println("$text")
-            }
+//            if (text.isNotEmpty() && attrs.isEmpty()) {
+//                println("$text")
+//            }
             //println("${text.ifEmpty { "" }}")
             children.forEach {
                 print("\t".repeat(it.depth))
@@ -145,25 +145,61 @@ fun CompositeEntity.searchEntity(name: String, criteria: (Entity)->Boolean = {tr
     return entity
 }
 
+/**
+ * <room>
+ *     <class>
+ *         <person>
+ *             <age><age>
+ *             <gender><gender>
+ *         <person>
+ *         <person>
+ *             <age><age>
+ *             <gender><gender>
+ *         <person>
+ *     <class>
+ * <room>
+ */
+/**
+ * <room>
+ *     <class>
+ *         <person>
+ *             <age><age>
+ *             <gender><gender>
+ *         <person>
+ *     <class>
+ * <room>
+ */
 fun CompositeEntity.buildXML(criteria: (Entity) -> Boolean = {true}): Entity? {
     var cEntity = CompositeEntity(name = this.name, attrs = this.attrs, text = this.text)
-    var auxComposite: CompositeEntity? = null
-    //var auxSimple: SimpleEntity? = null
+    var nextAuxComposite: CompositeEntity? = null
+    var getCompositeTags = false
+    var listUndo: MutableList<CompositeEntity> = mutableListOf()
+    var prevAuxComposite: CompositeEntity? = cEntity
     val v = object : Visitor {
         override fun visit(e: SimpleEntity) {
-            SimpleEntity(e.name, e.attrs, e.text, auxComposite)
+            if(getCompositeTags) {
+                SimpleEntity(e.name, e.attrs, e.text, nextAuxComposite)
+            }
         }
 
         override fun visit(c: CompositeEntity): Boolean {
-            //println(criteria(c))
-            if(criteria(c))
-                auxComposite = CompositeEntity(c.name, c.attrs, c.text, cEntity)
+//            println("Current: " + c.name)
+//            println("Current text: " + c.text)
+            if(criteria(c) && c.name != cEntity.name) {
+//                println("Previous: " + prevAuxComposite!!.name)
+                //println("Visiting: " + c.name)
+                nextAuxComposite  = CompositeEntity(c.name, c.attrs, c.text, prevAuxComposite)
+                prevAuxComposite = nextAuxComposite
+                getCompositeTags = true
+                listUndo.add(nextAuxComposite!!)
+            }
             return true
         }
 
         override fun endVisit(c: CompositeEntity) {
-            //auxSimple = null
-            auxComposite = null // TODO
+            getCompositeTags = false
+            if (listUndo.isNotEmpty())
+                prevAuxComposite = listUndo.removeLastOrNull()
         }
     }
     accept(v)
@@ -175,11 +211,19 @@ fun main(args: Array<String>) {
     // Example entity name
     println("EXAMPLE 1")
     val room = CompositeEntity("room")
-    val p1 = CompositeEntity(name = "person", text = "person1“‘<>&", parent = room)
+    val roomClass1 = CompositeEntity("class", parent = room)
+//    val roomClass2 = CompositeEntity("class", parent = room)
+    roomClass1.attrs += Attribute("classname", "EB1")
+//    roomClass2.attrs += Attribute("classname", "EB2")
+    val p1 = CompositeEntity(name = "person", text = "person1“‘<>&", parent = roomClass1)
     p1.attrs += Attribute("gender", "male")
     p1.attrs += Attribute("age", "24")
-    val p2 = CompositeEntity(name = "person", text = "person2", parent = room)
+    val p2 = CompositeEntity(name = "person", text = "person2", parent = roomClass1)
     p2.attrs += Attribute("gender", "female")
+//    val p3 = CompositeEntity(name = "person", text = "person3", parent = roomClass2)
+//    val p4 = CompositeEntity(name = "person", text = "person4", parent = roomClass2)
+
+
     //p2.attrs += Attribute("age", "28")
     room.print()
 
@@ -190,6 +234,9 @@ fun main(args: Array<String>) {
     SimpleEntity("gender", text = "male", parent = p1)
     SimpleEntity("age", text = "24", parent = p1)
     SimpleEntity("gender", text = "female", parent = p2)
+//    SimpleEntity("gender", text = "male", parent = p3)
+//    SimpleEntity("age", text = "24", parent = p3)
+//    SimpleEntity("gender", text = "female", parent = p4)
 //    SimpleEntity("age", text = "28", parent = p2)
     room.print()
 
@@ -203,7 +250,14 @@ fun main(args: Array<String>) {
     // Example --> build an XML document while filtering elements from another XML
     println("EXAMPLE 3")
     //room.children.forEach { println(it) }
-    val finalXML = room.buildXML() {x -> (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}}
+    //val finalXML = room.buildXML() {x -> (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}}
+    val finalXML = room.buildXML() {x ->
+        if (x.name == "person") {
+            (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}
+        } else {
+            true
+        }
+    } // TODO melhorar filtro com if(class name) else
     finalXML!!.print()
 
     println()
@@ -212,7 +266,6 @@ fun main(args: Array<String>) {
     val s2 = Student("catarina", 26, Gender.Female)
     val room2 = Room("C06.02", 50, RoomType.Medium, listOf(s1,s2))
     room2.listStudent += s2
-    val c = room2::class
 //    val entityName = c.findAnnotation<XmlName>()!!.name
 //    val entityHasNum = c.declaredMemberProperties.any { it.returnType.classifier.isEnum() }
 //    println("First entity name: $entityName")

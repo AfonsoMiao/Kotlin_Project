@@ -1,10 +1,7 @@
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.full.*
 
 // saber se um KClassifier é um enumerado
 fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
@@ -51,8 +48,9 @@ class ModelGenerator {
         val c = o::class
         var e = CompositeEntity(name = c.findAnnotation<XmlName>()!!.name, parent = parent)
         fields(c).forEach {
-            if(it.call(o) != null) {
-                when(it.returnType.classifier) {
+            println(it::class)
+            if(it.call(o) != null && !it.hasAnnotation<XmlIgnore>()) {
+                when(it.returnType.classifier) { //verificar se é para ignorar com hasAnnotation
                     Int::class -> SimpleEntity(name = it.name, text = it.call(o).toString(), parent = e)
                     String::class -> SimpleEntity(name = it.name, text = it.call(o).toString(), parent = e)
                     List::class -> createListObjects(it.call(o) as List<*>, e)
