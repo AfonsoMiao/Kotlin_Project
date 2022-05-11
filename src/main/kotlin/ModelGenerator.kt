@@ -47,13 +47,14 @@ class ModelGenerator {
     fun createModel(o: Any, parent: CompositeEntity? = null): Entity {
         val c = o::class
         var e = CompositeEntity(name = c.findAnnotation<XmlName>()!!.name, parent = parent)
+        var l = mutableListOf<Entity>()
         fields(c).forEach {
-            println(it::class)
-            if(it.call(o) != null && !it.hasAnnotation<XmlIgnore>()) {
+            if(it.call(o) != null && !it.hasAnnotation<XmlIgnore>() && it.hasAnnotation<XmlTagContent>()) {
                 when(it.returnType.classifier) { //verificar se é para ignorar com hasAnnotation
                     Int::class -> SimpleEntity(name = it.name, text = it.call(o).toString(), parent = e)
                     String::class -> SimpleEntity(name = it.name, text = it.call(o).toString(), parent = e)
-                    List::class -> createListObjects(it.call(o) as List<*>, e)
+                    //List::class -> createListObjects(it.call(o) as List<*>, e)
+                    List::class -> (it.call(o) as List<*>).forEach { x -> l += createModel(x!!, e) }
                     RoomType::class -> e.attrs += Attribute("type", it.call(o).toString())
                     StudentType::class -> e.attrs += Attribute("type", it.call(o).toString())
                     Gender::class -> e.attrs += Attribute("gender", it.call(o).toString())
