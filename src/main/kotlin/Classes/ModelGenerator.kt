@@ -1,16 +1,15 @@
+package Classes
+
+import Enumerations.Gender
+import Enumerations.RoomType
+import Enumerations.StudentType
+import XmlIgnore
+import XmlName
+import XmlTagContent
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
-
-// saber se um KClassifier é um enumerado
-fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
-
-// obter uma lista de constantes de um tipo enumerado
-fun <T : Any> KClass<T>.enumConstants(): List<T> {
-    require(isEnum()) { "class must be enum" }
-    return this.java.enumConstants.toList()
-}
 
 class ModelGenerator {
     private fun fields(c: KClass<*>): List<KProperty1<*, *>> {
@@ -21,7 +20,6 @@ class ModelGenerator {
         }
     }
 
-    // TODO
     // Add object as parent
     // This function should be recursive cause children will be composite entity
     private fun createListObjects(l: List<*>, parent: CompositeEntity): List<Entity> {
@@ -33,9 +31,6 @@ class ModelGenerator {
         return list
     }
 
-    // TODO
-    // create get object value like insertInto
-    // create function that builds the model according to attributes
 
     // Type of objects
     // int --> simpleEntity
@@ -43,7 +38,6 @@ class ModelGenerator {
     // enumeration --> attribute
     // collection --> function that creates other models (recursively) and after receive it add to children
     // Everything that it's in the list --> CompositeEntity
-    // TODO meter tudo numa mesma função e usar as anotações
     fun createModel(o: Any, parent: CompositeEntity? = null): Entity {
         val c = o::class
         var e = CompositeEntity(name = c.findAnnotation<XmlName>()!!.name, parent = parent)
@@ -66,3 +60,12 @@ class ModelGenerator {
         return e
     }
 }
+
+//// saber se um KClassifier é um enumerado
+//fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
+
+//// obter uma lista de constantes de um tipo enumerado
+//fun <T : Any> KClass<T>.enumConstants(): List<T> {
+//    require(isEnum()) { "class must be enum" }
+//    return this.java.enumConstants.toList()
+//}

@@ -1,3 +1,5 @@
+package Interfaces
+
 interface IObservable<O> {
     val observers: MutableList<O>
 

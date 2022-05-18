@@ -1,11 +1,86 @@
-import java.awt.Composite
-import kotlin.reflect.typeOf
-import kotlin.reflect.*
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.primaryConstructor
-import ModelGenerator
+import Classes.*
+import Enumerations.Gender
+import Enumerations.RoomType
+import Enumerations.StudentType
+import Interfaces.Visitor
+
+// Add criteria as decision function
+fun CompositeEntity.searchEntity(name: String, criteria: (Entity)->Boolean = {true}): Entity? {
+    var entity: Entity? = null
+    val v = object : Visitor {
+        override fun visit(e: SimpleEntity) {
+            if(e.name == name && criteria(e))
+                entity = e
+        }
+
+        override fun visit(e: CompositeEntity): Boolean {
+            if(e.name == name && criteria(e)) {
+                entity = e
+                return false
+            }
+            return true
+        }
+    }
+    accept(v)
+    return entity
+}
+
+/**
+ * <room>
+ *     <class>
+ *         <person>
+ *             <age><age>
+ *             <gender><gender>
+ *         <person>
+ *         <person>
+ *             <age><age>
+ *             <gender><gender>
+ *         <person>
+ *     <class>
+ * <room>
+ */
+/**
+ * <room>
+ *     <class>
+ *         <person>
+ *             <age><age>
+ *             <gender><gender>
+ *         <person>
+ *     <class>
+ * <room>
+ */
+fun CompositeEntity.buildXML(criteria: (Entity) -> Boolean = {true}): Entity? {
+    var cEntity = CompositeEntity(name = this.name, attrs = this.attrs, text = this.text)
+    var nextAuxComposite: CompositeEntity? = null
+    var getCompositeTags = false
+    var listUndo: MutableList<CompositeEntity> = mutableListOf()
+    var prevAuxComposite: CompositeEntity? = cEntity
+    val v = object : Visitor {
+        override fun visit(e: SimpleEntity) {
+            if(getCompositeTags) {
+                SimpleEntity(e.name, e.attrs, e.text, nextAuxComposite)
+            }
+        }
+
+        override fun visit(c: CompositeEntity): Boolean {
+            if(criteria(c) && c.name != cEntity.name) {
+                nextAuxComposite  = CompositeEntity(c.name, c.attrs, c.text, prevAuxComposite)
+                prevAuxComposite = nextAuxComposite
+                getCompositeTags = true
+                listUndo.add(nextAuxComposite!!)
+            }
+            return true
+        }
+
+        override fun endVisit(c: CompositeEntity) {
+            getCompositeTags = false
+            if (listUndo.isNotEmpty())
+                prevAuxComposite = listUndo.removeLastOrNull()
+        }
+    }
+    accept(v)
+    return cEntity
+}
 
 fun main(args: Array<String>) {
     // Example entity name
@@ -14,7 +89,7 @@ fun main(args: Array<String>) {
     val roomClass1 = CompositeEntity("class", parent = room)
 //    val roomClass2 = CompositeEntity("class", parent = room)
     roomClass1.attrs += Attribute("classname", "EB1")
-//    roomClass2.attrs += Attribute("classname", "EB2")
+//    roomClass2.attrs += Classes.Attribute("classname", "EB2")
     val p1 = CompositeEntity(name = "person", text = "person1“‘<>&", parent = roomClass1)
     p1.attrs += Attribute("gender", "male")
     p1.attrs += Attribute("age", "24")
@@ -24,7 +99,7 @@ fun main(args: Array<String>) {
 //    val p4 = CompositeEntity(name = "person", text = "person4", parent = roomClass2)
 
 
-    //p2.attrs += Attribute("age", "28")
+    //p2.attrs += Classes.Attribute("age", "28")
     room.print()
 
     println("")
@@ -57,7 +132,7 @@ fun main(args: Array<String>) {
         } else {
             true
         }
-    } // TODO melhorar filtro com if(class name) else
+    }
     finalXML!!.print()
 
     println()
@@ -75,15 +150,3 @@ fun main(args: Array<String>) {
     val model = modelGenerator.createModel(room2)
     model.print()
 }
-
-
-
-
-@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
-annotation class XmlName(val name: String)
-
-@Target(AnnotationTarget.PROPERTY)
-annotation class XmlTagContent
-
-@Target(AnnotationTarget.PROPERTY)
-annotation class XmlIgnore

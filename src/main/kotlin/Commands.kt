@@ -1,9 +1,8 @@
+import Classes.Attribute
+import Classes.CompositeEntity
+import Interfaces.Command
 import java.util.*
 
-interface Command {
-    fun run()
-    fun undo()
-}
 
 class UndoStack {
     val stack = Stack<Command>()

@@ -1,3 +1,5 @@
+import Enumerations.RoomType
+
 @XmlName("room")
 data class Room(
     @XmlIgnore
@@ -9,7 +11,3 @@ data class Room(
     @XmlTagContent
     var listStudent: List<Student> = emptyList()
 )
-
-enum class RoomType {
-    Small, Medium, Big
-}

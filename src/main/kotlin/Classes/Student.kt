@@ -1,3 +1,6 @@
+import Enumerations.Gender
+import Enumerations.StudentType
+
 @XmlName("student")
 data class Student(
     @XmlIgnore
@@ -9,10 +12,3 @@ data class Student(
     @XmlTagContent
     val type: StudentType? = null
 )
-
-enum class StudentType {
-    Bachelor, Master, Doctoral
-}
-enum class Gender {
-    Male, Female
-}
