@@ -54,6 +54,7 @@ class CompositeEntity(name: String = "", attrs: MutableList<Attribute> = mutable
 
     // Functions to add and remove entities from composite
     fun addChild(e: Entity) {
+        println("Fui chamado")
         if(children.add(e)) {
             notifyObservers {
                 it(EventType.ADD, ObjectType.ENTITY, e, null)

@@ -25,7 +25,7 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
     interface ComponentEvent {
 
         // Tag functions
-        fun addTag() {}
+        fun addTag(p: Entity) {}
         fun removeTag() {}
         fun renameTag() {}
 
@@ -63,7 +63,7 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
                 }
             } else if (e2 == ObjectType.ENTITY) {
                 when (e) {
-                    EventType.ADD -> ""//addEntity(p)
+                    EventType.ADD -> addEntity(p as Entity)//addEntity(p)
                     EventType.REMOVE -> ""//removePair(p)
                     EventType.REPLACE -> ""//replacePair(aux!!, p)
                 }
@@ -77,18 +77,26 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
 
         }
 
-//        data.addObserver { e, p, aux ->
-//            when (e) {
-//                EventType.ADD -> ""//addPair(p)
-//                EventType.REMOVE -> ""//removePair(p)
-//                EventType.REPLACE -> ""//replacePair(aux!!, p)
-//            }
-//        }
     }
 
     //TODO testar primeiro com adição de childs em ROOM
-    private fun addEntitiy(e: Entity) {
-        add(ComponentSkeleton(e as CompositeEntity))
+    private fun addEntity(e: Entity) {
+        //val tagName = JOptionPane.showInputDialog("Tag name") //TODO adicionar notify observers como a inner class PairComponent
+        //tagName?.let {
+        //    notifyObservers {
+        //        it.addTag(p)
+        //    }
+        //}
+        //print("Vou adicionar um novo component")
+        //TODO estou adicionar às componentes mas não mostra no filho correto --> mete sempre no 1º painel
+        //After notifying the object it should print
+        val window = ComponentSkeleton(e as CompositeEntity)
+        window.addObserver(object: ComponentEvent {
+                override fun addTag(p: Entity) {
+                    data.addChild(p)
+                }
+            })
+        add(window)
         revalidate()
     }
 
@@ -98,9 +106,16 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
         val rename = JMenuItem("Rename")
         // Rename current name of composite entity TODO
         rename.addActionListener {
-            val text = JOptionPane.showInputDialog("New Name")
-            add(ComponentSkeleton(CompositeEntity()))
-            revalidate()
+            //val text = JOptionPane.showInputDialog("New Name")
+            val tagName = JOptionPane.showInputDialog("Tag name") //TODO adicionar notify observers como a inner class PairComponent
+            //tagName?.let {
+            //    notifyObservers {
+            //        it.addTag(CompositeEntity(name=tagName, parent=data))
+            //    }
+            //}
+            //p
+            //add(ComponentSkeleton(CompositeEntity()))
+            //revalidate()
         }
         popupmenu.add(rename)
 
@@ -116,9 +131,16 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
         // Creates another child --> passing current object as parent TODO
         val addTag = JMenuItem("Add Tag")
         addTag.addActionListener {
-            val tagName = JOptionPane.showInputDialog("Tag name")
-            add(ComponentSkeleton(CompositeEntity(tagName, parent = data)))
-            revalidate()
+            //addEntity(data)
+            val tagName = JOptionPane.showInputDialog("Tag name") //TODO adicionar notify observers como a inner class PairComponent
+            println(data.name)
+            tagName?.let {
+                notifyObservers {
+                    it.addTag(CompositeEntity(name=tagName, parent=data))
+                }
+            }
+            //add(ComponentSkeleton(CompositeEntity(tagName, parent = data)))
+            //revalidate()
         }
         popupmenu.add(addTag)
 
@@ -146,8 +168,14 @@ class WindowSkeleton : JFrame("title") {
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(500, 500)
-
-        add(ComponentSkeleton(CompositeEntity("room")))
+        val data = CompositeEntity("room")
+        val window = ComponentSkeleton(data)
+        window.addObserver(object: ComponentSkeleton.ComponentEvent {
+            override fun addTag(p: Entity) {
+                data.addChild(p)
+            }
+        })
+        add(window)
     }
 
     fun open() {
@@ -157,5 +185,6 @@ class WindowSkeleton : JFrame("title") {
 
 fun main() {
     val w = WindowSkeleton()
+    //w.addObs
     w.open()
 }
