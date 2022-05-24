@@ -79,21 +79,11 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
 
     }
 
-    //TODO testar primeiro com adição de childs em ROOM
     private fun addEntity(e: Entity) {
-        //val tagName = JOptionPane.showInputDialog("Tag name") //TODO adicionar notify observers como a inner class PairComponent
-        //tagName?.let {
-        //    notifyObservers {
-        //        it.addTag(p)
-        //    }
-        //}
-        //print("Vou adicionar um novo component")
-        //TODO estou adicionar às componentes mas não mostra no filho correto --> mete sempre no 1º painel
-        //After notifying the object it should print
         val window = ComponentSkeleton(e as CompositeEntity)
         window.addObserver(object: ComponentEvent {
                 override fun addTag(p: Entity) {
-                    data.addChild(p)
+                    e.addChild(p)
                 }
             })
         add(window)
@@ -131,25 +121,27 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
         // Creates another child --> passing current object as parent TODO
         val addTag = JMenuItem("Add Tag")
         addTag.addActionListener {
-            //addEntity(data)
             val tagName = JOptionPane.showInputDialog("Tag name") //TODO adicionar notify observers como a inner class PairComponent
-            println(data.name)
             tagName?.let {
                 notifyObservers {
-                    it.addTag(CompositeEntity(name=tagName, parent=data))
+                    it.addTag(CompositeEntity(name=tagName))
                 }
             }
-            //add(ComponentSkeleton(CompositeEntity(tagName, parent = data)))
-            //revalidate()
         }
         popupmenu.add(addTag)
 
         // Remove current Tag?? --> last thing TODO
         val delete = JMenuItem("Delete Tag")
         delete.addActionListener {
-            val text = JOptionPane.showInputDialog("text")
-            add(JLabel(text))
-            revalidate()
+            //val text = JOptionPane.showInputDialog("text")
+            println("Want to delete on: " + data.name)
+            data.name.let {
+                notifyObservers {
+                    it.removeTag()
+                }
+            }
+            //add(JLabel(text))
+            //revalidate()
         }
         popupmenu.add(delete)
 
@@ -157,6 +149,7 @@ class ComponentSkeleton(val data: CompositeEntity) : JPanel(), IObservable<Compo
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (SwingUtilities.isRightMouseButton(e))
+                    println("Clicked on: " + data.name) //Clicking correctly on panel but it's still assuming parent as room
                     popupmenu.show(this@ComponentSkeleton, e.x, e.y)
             }
         })
@@ -172,6 +165,7 @@ class WindowSkeleton : JFrame("title") {
         val window = ComponentSkeleton(data)
         window.addObserver(object: ComponentSkeleton.ComponentEvent {
             override fun addTag(p: Entity) {
+                println("Data before calling add child: " + data.name)
                 data.addChild(p)
             }
         })
