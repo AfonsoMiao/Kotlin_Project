@@ -6,8 +6,7 @@ import Enumerations.EventType
 import Interfaces.IObservable
 
 import java.awt.*
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
+import java.awt.event.*
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 
@@ -17,7 +16,7 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
 
         // Tag functions
         fun addTag(c: Controller, newTagName: String) {}
-        fun removeTag(view: Component) {}
+        fun removeTag(view: Component, c:Controller, tagName: String) {}
         fun renameTag(c: Controller, oldName: String, newName: String) {}
 
         // Attribute functions
@@ -57,7 +56,6 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
                 EventType.RENAME_ATTRIBUTE -> renameAttribute(p as String, aux!! as String)
                 EventType.RENAME_TAG -> renameTag(p as String)
                 EventType.ADD_TAG -> addChild(p as CompositeEntity)
-                //EventType.REMOVE_TAG -> //removeTag()
                 EventType.ADD_ATTRIBUTE -> addAttribute(p as Attribute)
                 EventType.REMOVE_ATTRIBUTE -> removeAttribute(p as Attribute)
             }
@@ -65,9 +63,11 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
     }
 
     private fun removeAttribute(att: Attribute) {
-        println("Remove attribute: ${att.name}")
         val panelRemove = attributes.find { (it.getComponent(0)!! as JLabel).text == att.name }
         attributes.remove(panelRemove)
+        for (m in panelRemove!!.mouseListeners) {
+            panelRemove!!.removeMouseListener(m)
+        }
         panelRemove!!.removeAll()
         revalidate()
         repaint()
@@ -76,8 +76,14 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
     private fun addAttribute(att: Attribute) {
         var panel = JPanel()
         var label = JLabel(att.name)
+        var textField = JTextField(att.attrValue)
+        textField.addKeyListener(object: KeyAdapter() {
+            override fun keyReleased(e: KeyEvent?) {
+                notifyObservers { it.editValueAttribute(c, att, (e!!.source as JTextField).getText()) }
+            }
+        })
         panel.add(label)
-        panel.add(JTextField(att.attrValue))
+        panel.add(textField)
         panel.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 val popupmenu = JPopupMenu("Actions")
@@ -108,15 +114,6 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
         repaint()
     }
 
-    // It should
-    //private fun removeTag() {
-    //    println("current view: $entityName")
-    //    removeAll()
-    //    remove(this)
-    //    remove(0)
-    //    revalidate()
-    //    repaint()
-    //}
 
     private fun renameTag(newName: String) {
         entityName = newName
@@ -140,10 +137,11 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
             }
 
             override fun addAttribute(c: Controller, attName: String, attValue: String) {
-                c.addAttribute(attName, attValue)
+                c.addAttribute(Attribute(attName, attValue))
             }
 
-            override fun removeTag(view: Component) {
+            override fun removeTag(view: Component, c:Controller, tagName: String) {
+                c.removeChild(tagName)
                 remove(view)
                 revalidate()
                 repaint()
@@ -165,9 +163,14 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
             for(a in c.data.attrs) {
                 var panel = JPanel()
                 var label = JLabel(a.name)
-                //label
+                var textField = JTextField(a.attrValue)
+                textField.addKeyListener(object: KeyAdapter() {
+                    override fun keyReleased(e: KeyEvent?) {
+                        notifyObservers { it.editValueAttribute(c, a, (e!!.source as JTextField).getText()) }
+                    }
+                })
                 panel.add(label)
-                panel.add(JTextField(a.attrValue))
+                panel.add(textField)
                 panel.addMouseListener(object: MouseAdapter() {
                     override fun mouseClicked(e: MouseEvent) {
                         val popupmenu = JPopupMenu("Actions")
@@ -223,8 +226,7 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
         val removeTag = JMenuItem("Remove Tag ${c.data.name}")
         removeTag.addActionListener {
             notifyObservers {
-                //println(this.entityName)
-                it.removeTag(this)
+                it.removeTag(this, c, c.data.name)
             }
         }
         popupmenu.add(removeTag)
@@ -235,6 +237,13 @@ class ComponentSkeleton2(val c: Controller) : JPanel(), IObservable<ComponentSke
             notifyObservers { it.renameTag(c, c.data.name, text) }
         }
         popupmenu.add(renameTag)
+
+        val printCurrentEntity = JMenuItem("Print Tag")
+        printCurrentEntity.addActionListener {
+            println(c.data.print())
+        }
+        popupmenu.add(printCurrentEntity)
+
 
 
         addMouseListener(object : MouseAdapter() {
@@ -251,7 +260,7 @@ class WindowSkeleton2: JFrame("title") {
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(500, 500)
-        val room = CompositeEntity("room", attrs = mutableListOf(Attribute("ClassName", "C0.96")))//, Attribute("Capacity", "100")))
+        val room = CompositeEntity("room", attrs = mutableListOf(Attribute("ClassName", "C0.96")))
         val p1 = CompositeEntity("p1", parent=room)
         val age1 = CompositeEntity("age1", parent = p1)
         val p2 = CompositeEntity("p2", parent=room)
@@ -272,11 +281,15 @@ class WindowSkeleton2: JFrame("title") {
             }
 
             override fun addAttribute(c: Controller, attName: String, attValue: String) {
-                c.addAttribute(attName, attValue)
+                c.addAttribute(Attribute(attName, attValue))
             }
 
             override fun removeAttribute(c: Controller, a: Attribute) {
                 c.removeAttribute(a)
+            }
+
+            override fun editValueAttribute(c: Controller, a: Attribute, value: String) {
+                c.renameAttributeValue(a, value)
             }
         })
         add(skeleton)
