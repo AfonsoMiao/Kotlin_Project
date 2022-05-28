@@ -5,25 +5,25 @@ import Enumerations.StudentType
 import Interfaces.Visitor
 
 // Add criteria as decision function
-fun CompositeEntity.searchEntity(name: String, criteria: (Entity)->Boolean = {true}): Entity? {
-    var entity: Entity? = null
-    val v = object : Visitor {
-        override fun visit(e: SimpleEntity) {
-            if(e.name == name && criteria(e))
-                entity = e
-        }
-
-        override fun visit(e: CompositeEntity): Boolean {
-            if(e.name == name && criteria(e)) {
-                entity = e
-                return false
-            }
-            return true
-        }
-    }
-    accept(v)
-    return entity
-}
+//fun CompositeEntity.searchEntity(name: String, criteria: (Entity)->Boolean = {true}): Entity? {
+//    var entity: Entity? = null
+//    val v = object : Visitor {
+//        override fun visit(e: SimpleEntity) {
+//            if(e.name == name && criteria(e))
+//                entity = e
+//        }
+//
+//        override fun visit(e: CompositeEntity): Boolean {
+//            if(e.name == name && criteria(e)) {
+//                entity = e
+//                return false
+//            }
+//            return true
+//        }
+//    }
+//    accept(v)
+//    return entity
+//}
 
 /**
  * <room>

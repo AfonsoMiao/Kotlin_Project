@@ -7,7 +7,7 @@ import Interfaces.Visitor
  *  --> attributes: <entity att="...">
  *  --> text: <entity>anything</entity>
  */
-abstract class Entity(var name: String, var attrs: MutableList<Attribute> = mutableListOf(), var text: String = "", val parent: CompositeEntity? = null) {
+abstract class Entity(var name: String, var attrs: MutableList<Attribute> = mutableListOf(), var text: String = "", var parent: CompositeEntity? = null) {
     init {
         parent?.children?.add(this)
         text = cleanText(text)
@@ -34,7 +34,7 @@ abstract class Entity(var name: String, var attrs: MutableList<Attribute> = muta
     val depth: Int
         get() =
             if (parent == null) 0
-            else 1 + parent.depth
+            else 1 + parent!!.depth
 
     fun buildAttrs(): String {
         return if (attrs.isEmpty()) "" else attrs.joinToString(separator = " ", transform = { it.name + "=" + "\"${it.attrValue}\""})//.joinToString{ it.name + "=" + "\"${it.attrValue}\""}
