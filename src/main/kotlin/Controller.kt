@@ -64,4 +64,8 @@ class Controller (var data: CompositeEntity) : IObservable<(EventType, Any, Any?
             it(EventType.RENAME_TAG, old, newName, null)
         }
     }
+
+    fun getXML():String {
+        return data.getXML()
+    }
 }

@@ -37,10 +37,6 @@ class CompositeEntity(name: String = "", attrs: MutableList<Attribute> = mutable
         if (children.isNotEmpty()) {
             var attrString = buildAttrs()
             println("<$name $attrString>")
-//            if (text.isNotEmpty() && attrs.isEmpty()) {
-//                println("$text")
-//            }
-            //println("${text.ifEmpty { "" }}")
             children.forEach {
                 print("\t".repeat(it.depth))
                 it.print()
@@ -49,6 +45,27 @@ class CompositeEntity(name: String = "", attrs: MutableList<Attribute> = mutable
             println("</$name>")
         } else {
             super.print()
+        }
+    }
+
+    override fun getXML(): String {
+        if (children.isNotEmpty()) {
+            var attrString = buildAttrs()
+            var xml = "<$name${if(attrString != "") " $attrString" else ""}>\n"
+            //println()
+            children.forEach {
+                //print()
+                xml += "\t".repeat(it.depth)
+                xml += it.getXML()
+                //it.print()
+            }
+            //print("\t".repeat(this.depth))
+            xml += "\t".repeat(this.depth)
+            //println("</$name>")
+            xml += "</$name>\n"
+            return xml
+        } else {
+            return super.getXML()
         }
     }
 

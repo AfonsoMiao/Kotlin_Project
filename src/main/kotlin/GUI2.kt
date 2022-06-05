@@ -8,6 +8,7 @@ import javafx.scene.Parent
 
 import java.awt.*
 import java.awt.event.*
+import java.io.File
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 import javax.swing.text.View
@@ -244,8 +245,18 @@ class WindowSkeleton2: JFrame("title") {
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(500, 500)
-        val room = CompositeEntity("room", attrs = mutableListOf(Attribute("ClassName", "C0.96")))
+        val room = CompositeEntity("room")
         val controller = Controller(room)
+        //val button =
+        val xmlButton = JButton("Save XML")
+        xmlButton.addActionListener {
+            val filename = JOptionPane.showInputDialog("Filename")
+            val xml = controller.getXML()
+            println(xml)
+            File("src/main/kotlin/Output/$filename.txt").writeText(xml)
+        }
+        xmlButton.setBounds(50, 150, 100, 30);
+        add(xmlButton, BorderLayout.NORTH)
         val undoStack = UndoStack()
         fun execute(c: Command) {
             undoStack.execute(c)
