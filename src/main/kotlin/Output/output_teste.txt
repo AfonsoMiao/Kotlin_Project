@@ -1,0 +1,5 @@
+<room descrição="100" sala reservada="false">
+	<p1 Name="Afonso">
+		<age Value="21"></age>
+	</p1>
+</room>

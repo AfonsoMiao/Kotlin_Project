@@ -1,9 +1,10 @@
-import AddAttributeCommand
 import Classes.*
+import Classes.Action
 import Classes.UndoStack
 import Enumerations.EventType
 import Interfaces.Command
 import Interfaces.IObservable
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO
 import javafx.scene.Parent
 
 import java.awt.*
@@ -12,11 +13,12 @@ import java.io.File
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 import javax.swing.text.View
+import kotlin.collections.List
 
-class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel(), IObservable<ComponentSkeleton2.ComponentEvent> {
+class ComponentSkeleton2(val c: Controller, private val undoStack: UndoStack, private val attributesFrames: MutableList<AttributeFrameSetup>) : JPanel(), IObservable<ComponentSkeleton2.ComponentEvent> {
     interface ComponentEvent {
-        fun addTag(parent: CompositeEntity, newTagName: String) {}
-        fun removeTag(parent: CompositeEntity, removeTagName: String) {}
+        fun addTag(parent: CompositeEntity, newEntity: CompositeEntity) {}
+        fun removeTag(parent: CompositeEntity, entity: CompositeEntity) {}
         fun renameTag(entity: CompositeEntity, newTagName: String) {}
 
         fun addAttribute(entity: CompositeEntity, attName: String, attValue: String) {}
@@ -26,12 +28,13 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
     }
 
     override val observers: MutableList<ComponentEvent> = mutableListOf()
-    private var listComponents: MutableList<Component> = mutableListOf()
+    val listComponents: MutableList<Component> = mutableListOf()
 
-    inner class Component(val e: CompositeEntity, val undoStack: UndoStack): JPanel() {
+    inner class Component(val e: CompositeEntity, private val undoStack: UndoStack): JPanel() {
 
         var entityName: String = e.name
         var listAttributes: MutableList<JPanel> = mutableListOf()
+        val popupmenu = JPopupMenu("Actions")
 
         override fun paintComponent(g: Graphics) {
             super.paintComponent(g)
@@ -45,54 +48,68 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
                 BorderFactory.createEmptyBorder(30, 10, 10, 10),
                 BorderFactory.createLineBorder(Color.BLACK, 2, true)
             )
+            listComponents += this
             createPopupMenu()
             buildAttributes()
+            buildChild()
+        }
+
+        fun buildChild() {
+            this.e.children.forEach {e ->
+                addTag(e as CompositeEntity, this.e)
+            }
         }
 
         private fun buildAttributes() {
-//            if(listAttributes.size != 0) {
-//                for(a in listAttributes) {
-//                    var panel = JPanel()
-//                    var label = JLabel(a.name)
-//                    var textField = JTextField(a.attrValue)
-//                    //textField.addKeyListener(object: KeyAdapter() {
-//                    //    override fun keyReleased(e: KeyEvent?) {
-//                    //        notifyObservers { it.editValueAttribute(c, a, (e!!.source as JTextField).getText(), data) }
-//                    //    }
-//                    //})
-//                    panel.add(label)
-//                    panel.add(textField)
-//                    panel.addMouseListener(object: MouseAdapter() {
-//                        override fun mouseClicked(e: MouseEvent) {
-//                            val popupmenu = JPopupMenu("Actions")
-//                            val renameAttribute = JMenuItem("Rename Attribute ${a.name}")
-//                            //renameAttribute.addActionListener {
-//                            //    val text = JOptionPane.showInputDialog("New name")
-//                            //    notifyObservers { it.renameAttribute(c, a.name, text, data) }
-//                            //}
-//                            popupmenu.add(renameAttribute)
-//
-//                            val removeAttribute = JMenuItem("Remove Attribute ${a.name}")
-////                            removeAttribute.addActionListener {
-////                                notifyObservers { it.removeAttribute(c, a, data) }
-////                            }
-//                            popupmenu.add(removeAttribute)
-//
-//                            popupmenu.show(e.component, e.x, e.y)
-//                        }
-//                    })
-//                    //attributes += panel
-//                    add(panel)
-//                }
-//            }
+            if(e.attrs.size != 0) {
+                for(a in e.attrs) {
+                    var frame = attributesFrames.find { a.name.contains(it.typeAttribute) }
+                    if(frame != null) {
+                        var panel = frame!!.getFrame(c, e, a, undoStack)
+                        listAttributes += panel
+                        add(panel)
+                    } else {
+                        var panel = JPanel()
+                        var label = JLabel(a.name)
+                        var textField = JTextField(a.attrValue)
+                        textField.addKeyListener(object: KeyAdapter() {
+                            override fun keyReleased(k: KeyEvent?) {
+                                notifyObservers { it.editValueAttribute(e, a, (k!!.source as JTextField).getText()) }
+                            }
+                        })
+                        panel.add(label)
+                        panel.add(textField)
+                        panel.addMouseListener(object: MouseAdapter() {
+                            override fun mouseClicked(m: MouseEvent) {
+                                val popupmenu = JPopupMenu("Actions")
+                                val renameAttribute = JMenuItem("Rename Attribute ${a.name}")
+                                renameAttribute.addActionListener {
+                                    val text = JOptionPane.showInputDialog("New name")
+                                    notifyObservers { it.renameAttribute(e, a, text) }
+                                }
+                                popupmenu.add(renameAttribute)
+
+                                val removeAttribute = JMenuItem("Remove Attribute ${a.name}")
+                                removeAttribute.addActionListener {
+                                    notifyObservers { it.removeAttribute(e, a) }
+                                }
+                                popupmenu.add(removeAttribute)
+
+                                popupmenu.show(m.component, m.x, m.y)
+                            }
+                        })
+                        listAttributes += panel
+                        add(panel)
+                    }
+                    }
+            }
         }
 
         private fun createPopupMenu() {
-            val popupmenu = JPopupMenu("Actions")
             val addTag = JMenuItem("Add Tag $entityName")
             addTag.addActionListener {
                 val text = JOptionPane.showInputDialog("New Tag Name")
-                notifyObservers { it.addTag(this.e, text) }
+                notifyObservers { it.addTag(this.e, CompositeEntity(text)) }
             }
             popupmenu.add(addTag)
 
@@ -104,11 +121,11 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
                 notifyObservers { it.addAttribute(this.e, attName, attValue) }
             }
             popupmenu.add(addAttribute)
-//
-            val removeTag = JMenuItem("Remove Tag ${entityName}")
+
+            val removeTag = JMenuItem("Remove Tag $entityName")
             removeTag.addActionListener {
                 notifyObservers {
-                    it.removeTag(this.e.parent!!, entityName)
+                    it.removeTag(this.e.parent!!, e)
                 }
             }
             popupmenu.add(removeTag)
@@ -119,13 +136,7 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
                 notifyObservers { it.renameTag(this.e, text) }
             }
             popupmenu.add(renameTag)
-//
-//            val printCurrentEntity = JMenuItem("Print Tag")
-//            printCurrentEntity.addActionListener {
-//                println(data.print())
-//            }
-//            popupmenu.add(printCurrentEntity)
-//
+
             val stack = JMenuItem("Undo")
             stack.addActionListener {
                 println(undoStack.stack)
@@ -144,9 +155,35 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
 
     init {
         layout = GridLayout(0,1)
-        val rootComponent = Component(c.data, undoStack)
-        this.listComponents += rootComponent
-        add(rootComponent)
+        fun execute(c: Command) {
+            undoStack.execute(c)
+        }
+        this.addObserver(object: ComponentEvent {
+            override fun addTag(parent: CompositeEntity, newEntity: CompositeEntity) {
+                execute(AddChildCommand(c, newEntity, parent))
+            }
+
+            override fun removeTag(parent: CompositeEntity, entity: CompositeEntity) {
+                execute(RemoveChildCommand(c, entity, parent))
+            }
+
+            override fun renameTag(entity: CompositeEntity, newTagName: String) {
+                execute(RenameTagCommand(c, entity.name, newTagName, entity))
+            }
+
+            override fun addAttribute(entity: CompositeEntity, attName: String, attValue: String) {
+                execute(AddAttributeCommand(c, Attribute(attName, attValue), entity))
+            }
+            override fun removeAttribute(entity: CompositeEntity, a: Attribute) {
+                execute(RemoveAttributeCommand(c, a, entity))
+            }
+            override fun renameAttribute(entity: CompositeEntity, a: Attribute, newName: String) {
+                execute(RenameAttributeNameCommand(c, a, newName, entity))
+            }
+            override fun editValueAttribute(entity: CompositeEntity, a: Attribute, value: String) {
+                execute(RenameAttributeValueCommand(c, a, value, entity))
+            }
+        })
         c.addObserver { e, p, aux, aux2 ->
             when(e) {
                 EventType.ADD_TAG -> addTag(p as CompositeEntity, aux as CompositeEntity)
@@ -157,6 +194,8 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
                 EventType.RENAME_ATTRIBUTE -> renameAttributeName(p as CompositeEntity, aux as String, aux2 as String)
             }
         }
+
+        add(Component(c.data, undoStack))
     }
 
     private fun renameTag(oldTagName: String, newTagName: String) {
@@ -231,22 +270,38 @@ class ComponentSkeleton2(val c: Controller, val undoStack: UndoStack) : JPanel()
 
     }
 
-    private fun addTag(t: CompositeEntity, parent: CompositeEntity) {
+    fun addTag(t: CompositeEntity, parent: CompositeEntity) {
         val jComponent = listComponents.find { it.entityName == parent.name }
-        val newComponent = Component(t, undoStack)
-        listComponents += newComponent
-        jComponent!!.add(newComponent)
+        println(parent.name)
+        println(t.name)
+        println(jComponent)
+        //val newComponent = Component(t, undoStack)
+        //listComponents += newComponent
+        jComponent!!.add(Component(t, undoStack))
         revalidate()
         repaint()
     }
 }
 
 class WindowSkeleton2: JFrame("title") {
+    @InjectAdd
+    private var actions = mutableListOf<Action>(EventAdd())
+    @InjectAdd
+    private var attributesFrames = mutableListOf(DescriptionFrame(), DateFrame(), MandatoryFrame())
+    private lateinit var rootComponent: ComponentSkeleton2
+    private lateinit var controller: Controller
+    private val undoStack = UndoStack()
+
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(500, 500)
-        val room = CompositeEntity("room")
-        val controller = Controller(room)
+    }
+
+    fun open() {
+        val room = CompositeEntity("room", attrs = mutableListOf(Attribute("descrição", "100"), Attribute("sala reservada", "true")))
+        val p1 = CompositeEntity("p1", attrs = mutableListOf(Attribute("Name", "Afonso")) ,parent = room)
+        CompositeEntity("age", attrs = mutableListOf(Attribute("Value", "21")) ,parent=p1)
+        controller = Controller(room)
         //val button =
         val xmlButton = JButton("Save XML")
         xmlButton.addActionListener {
@@ -257,44 +312,27 @@ class WindowSkeleton2: JFrame("title") {
         }
         xmlButton.setBounds(50, 150, 100, 30);
         add(xmlButton, BorderLayout.NORTH)
-        val undoStack = UndoStack()
-        fun execute(c: Command) {
-            undoStack.execute(c)
+        rootComponent = ComponentSkeleton2(controller, undoStack, attributesFrames)
+        add(rootComponent)
+        actions.forEach {a ->
+            rootComponent.listComponents.forEach {c ->
+                println(c.e.name)
+                val item = JMenuItem(a.actionName)
+                if(c.e.name == a.parentName) {
+                    item.addActionListener { a.execute(controller, c.e, undoStack) }
+                } else {
+                    item.isOpaque = true
+                }
+                c.popupmenu.add(item)
+            }
         }
-        val skeleton = ComponentSkeleton2(controller, undoStack)
-        skeleton.addObserver(object: ComponentSkeleton2.ComponentEvent {
-            override fun addTag(parent: CompositeEntity, newTagName: String) {
-                execute(AddChildCommand(controller, newTagName, parent))
-            }
-
-            override fun removeTag(parent: CompositeEntity, removeTagName: String) {
-                execute(RemoveChildCommand(controller, removeTagName, parent))
-            }
-
-            override fun renameTag(entity: CompositeEntity, newTagName: String) {
-                execute(RenameTagCommand(controller, entity.name, newTagName, entity))
-            }
-
-            override fun addAttribute(entity: CompositeEntity, attName: String, attValue: String) {
-                execute(AddAttributeCommand(controller, Attribute(attName, attValue), entity))
-            }
-            override fun removeAttribute(entity: CompositeEntity, a: Attribute) {
-                execute(RemoveAttributeCommand(controller, a, entity))
-            }
-            override fun renameAttribute(entity: CompositeEntity, a: Attribute, newName: String) {
-                execute(RenameAttributeNameCommand(controller, a, newName, entity))
-            }
-            override fun editValueAttribute(entity: CompositeEntity, a: Attribute, value: String) {
-                execute(RenameAttributeValueCommand(controller, a, value, entity))
-            }
-        })
-    add(skeleton)
-    }
-
-    fun open() {
+        //rootComponent.add(DateFrame().getFrame(controller, controller.data, undoStack))
         isVisible = true
+
     }
 }
+
+annotation class InjectAdd
 
 
 fun main() {

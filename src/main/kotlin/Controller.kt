@@ -3,48 +3,49 @@ import Classes.CompositeEntity
 import Enumerations.EventType
 import Interfaces.IObservable
 
-class Controller (var data: CompositeEntity) : IObservable<(EventType, Any, Any?, Any?) -> Unit>{
+class Controller (val data: CompositeEntity) : IObservable<(EventType, Any, Any?, Any?) -> Unit>{
     override val observers: MutableList<(EventType, Any, Any?, Any?) -> Unit> = mutableListOf()
 
-    fun addChild(newTagName: String, parent: CompositeEntity, undo: Boolean) {
+    fun addChild(newEntity: CompositeEntity, parent: CompositeEntity) {
         println("Create new child")
         println(parent.name)
-        val newComposite = CompositeEntity(newTagName, parent = parent)
+        newEntity.parent = parent
+        parent.children += newEntity
         parent.print()
-        notifyObservers { it(EventType.ADD_TAG, newComposite, parent, null) }
+        notifyObservers { it(EventType.ADD_TAG, newEntity, parent, null) }
     }
 
-    fun removeChild(tagName: String, parent: CompositeEntity, undo: Boolean) {
-        val childRemove = data.searchEntity(tagName)
+    fun removeChild(newEntity: CompositeEntity, parent: CompositeEntity) {
+        println("Removing child ${newEntity.name}")
+        val childRemove = data.searchEntity(newEntity.name)
         parent.children.remove(childRemove)
         childRemove!!.parent = null
         parent.print()
         notifyObservers { it(EventType.REMOVE_TAG, childRemove, parent, null) }
     }
 
-    fun addAttribute(entity: CompositeEntity, a: Attribute, undo: Boolean) {//attName: String, attValue: String) {
+    fun addAttribute(entity: CompositeEntity, a: Attribute) {
         val child = data.searchEntity(entity.name) {it == entity}
         child!!.attrs += a
-        child!!.print()
-        //data.attrs += a
+        child.print()
         notifyObservers { it(EventType.ADD_ATTRIBUTE, entity, a, null) }
     }
 
-    fun removeAttribute(entity: CompositeEntity, attr: Attribute, undo: Boolean) {
+    fun removeAttribute(entity: CompositeEntity, attr: Attribute) {
         val child = data.searchEntity(entity.name) {it == entity}
         child!!.attrs.remove(attr)
         data.print()
         notifyObservers { it(EventType.REMOVE_ATTRIBUTE, entity, attr, null) }
     }
 
-    fun renameAttributeValue(entity: CompositeEntity, a: Attribute, value: String, undo: Boolean) {
+    fun renameAttributeValue(entity: CompositeEntity, a: Attribute, value: String) {
         val element = data.searchEntity(entity.name) {it == entity}
         val elementAttribute = element!!.attrs.find { it.name == a.name }
         elementAttribute!!.attrValue = value
         data.print()
     }
 
-    fun renameAttribute(entity: CompositeEntity, a: Attribute, newName: String, undo: Boolean) {
+    fun renameAttribute(entity: CompositeEntity, a: Attribute, newName: String) {
         val child = data.searchEntity(entity.name) {it == entity}
         val childAttribute = child!!.attrs.find { it.name == a.name }
         val oldName = a.name
@@ -56,7 +57,7 @@ class Controller (var data: CompositeEntity) : IObservable<(EventType, Any, Any?
         }
     }
 
-    fun renameTag(entity: CompositeEntity, old: String, newName: String, undo: Boolean) {
+    fun renameTag(entity: CompositeEntity, old: String, newName: String) {
         val element = data.searchEntity(entity.name) {it == entity}
         element!!.name = newName
         data.print()

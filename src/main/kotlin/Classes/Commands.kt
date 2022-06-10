@@ -3,48 +3,43 @@ package Classes
 import Controller
 import Interfaces.Command
 
-class AddChildCommand(val c: Controller, val newTagName: String, val parent: CompositeEntity) : Command {
+class AddChildCommand(val c: Controller, val newEntity: CompositeEntity/**val newTagName: String*/, val parent: CompositeEntity) : Command {
     override fun run() {
-        c.addChild(newTagName, parent, false)
+        c.addChild(newEntity, parent)
     }
 
     override fun undo() {
-        c.removeChild(newTagName, parent, true)
+        c.removeChild(newEntity, parent)
     }
 }
 
-class RemoveChildCommand(val c: Controller, val newTagName: String, val parent: CompositeEntity) : Command {
+class RemoveChildCommand(val c: Controller, val entity: CompositeEntity, val parent: CompositeEntity) : Command {
     override fun run() {
-        println("Called")
-        println("Removing child $newTagName with parent ${parent.name}")
-        c.removeChild(newTagName, parent, false)
+        c.removeChild(entity, parent)
     }
 
     override fun undo() {
-        println("Called undo")
-        println("Creating new child $newTagName with parent ${parent.name}")
-        parent.print()
-        c.addChild(newTagName, parent, true)
+        c.addChild(entity, parent)
     }
 }
 
 class RenameTagCommand(val c: Controller, val old: String, val newTagName: String, val entity: CompositeEntity): Command {
     override fun run() {
-        c.renameTag(entity, old, newTagName, false)
+        c.renameTag(entity, old, newTagName)
     }
 
     override fun undo() {
-        c.renameTag(entity, newTagName, old, true)
+        c.renameTag(entity, newTagName, old)
     }
 }
 
 class AddAttributeCommand(val c: Controller, val att: Attribute, val entity: CompositeEntity) : Command {
     override fun run() {
-        c.addAttribute(entity, att, false)
+        c.addAttribute(entity, att)
     }
 
     override fun undo() {
-        c.removeAttribute(entity, att, true)
+        c.removeAttribute(entity, att)
     }
 }
 
@@ -53,31 +48,31 @@ class RenameAttributeNameCommand(val c: Controller, val a: Attribute, val newNam
     val oldName = a.name
 
     override fun run() {
-        c.renameAttribute(entity, a, newName, false)
+        c.renameAttribute(entity, a, newName)
     }
 
     override fun undo() {
-        c.renameAttribute(entity,a, oldName, true)
+        c.renameAttribute(entity,a, oldName)
     }
 }
 
 class RenameAttributeValueCommand(val c: Controller, val a: Attribute, val value: String, val entity: CompositeEntity) : Command {
     val oldValue = a.attrValue
     override fun run() {
-        c.renameAttributeValue(entity, a, value, false)
+        c.renameAttributeValue(entity, a, value)
     }
 
     override fun undo() {
-        c.renameAttributeValue(entity, a, oldValue, true)
+        c.renameAttributeValue(entity, a, oldValue)
     }
 }
 
 class RemoveAttributeCommand(val c: Controller, val a: Attribute, val entity: CompositeEntity) : Command {
     override fun run() {
-        c.removeAttribute(entity, a, false)
+        c.removeAttribute(entity, a)
     }
 
     override fun undo() {
-        c.addAttribute(entity, a, true)
+        c.addAttribute(entity, a)
     }
 }
