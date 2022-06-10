@@ -1,0 +1,4 @@
+package Classes
+
+interface ComponentEvent {
+}
