@@ -30,7 +30,7 @@ class CompositeEntity(name: String = "", attrs: MutableList<Attribute> = mutable
     override fun print() {
         if (children.isNotEmpty()) {
             var attrString = buildAttrs()
-            println("<$name $attrString>")
+            println("<$name${if(attrString != "") " $attrString" else ""}>")
             children.forEach {
                 print("\t".repeat(it.depth))
                 it.print()

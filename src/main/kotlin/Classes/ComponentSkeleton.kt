@@ -194,10 +194,19 @@ class ComponentSkeleton (val c: Controller, private val undoStack: UndoStack, pr
                     EventType.ADD_ATTRIBUTE -> addAttribute(p as CompositeEntity, aux as Attribute)
                     EventType.REMOVE_ATTRIBUTE -> removeAttribute(p as CompositeEntity, aux as Attribute)
                     EventType.RENAME_ATTRIBUTE -> renameAttributeName(p as CompositeEntity, aux as String, aux2 as String)
+                    EventType.RENAME_ATTRIBUTE_VALUE -> renameAttributeValue(p as CompositeEntity, aux as Attribute)
                 }
             }
 
             add(Component(c.data, undoStack))
+        }
+
+        private fun renameAttributeValue(t: CompositeEntity, a:Attribute) {
+            val jComponent = listComponents.find { it.entityName == t.name }
+            val jComponentAttribute = jComponent!!.listAttributes.find { (it.getComponent(0)!! as JLabel).text == a.name }
+            (jComponentAttribute!!.getComponent(1)!! as JTextField).text = a.attrValue
+            revalidate()
+            repaint()
         }
 
         private fun renameTag(oldTagName: String, newTagName: String) {

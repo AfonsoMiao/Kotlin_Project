@@ -40,13 +40,7 @@ class Window: JFrame("title") {
         add(rootComponent)
         menuActions.forEach {a ->
             rootComponent.listComponents.forEach {c ->
-                val item = JMenuItem(a.actionName)
-                if(c.e.name == a.parentName) {
-                    item.addActionListener { a.execute(controller, c.e, undoStack) }
-                } else {
-                    item.isEnabled = false
-                }
-                c.popupmenu.add(item)
+                c.popupmenu.add(a.execute(controller, c.e, undoStack))
             }
         }
         isVisible = true

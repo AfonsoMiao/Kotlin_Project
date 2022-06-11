@@ -43,6 +43,9 @@ class Controller (val data: CompositeEntity) : IObservable<(EventType, Any, Any?
         val elementAttribute = element!!.attrs.find { it.name == a.name }
         elementAttribute!!.attrValue = value
         data.print()
+        notifyObservers {
+            it(EventType.RENAME_ATTRIBUTE_VALUE, element, elementAttribute, null)
+        }
     }
 
     fun renameAttribute(entity: CompositeEntity, a: Attribute, newName: String) {
