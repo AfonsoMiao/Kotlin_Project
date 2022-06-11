@@ -42,7 +42,7 @@ abstract class Entity(var name: String, var attrs: MutableList<Attribute> = muta
 
     open fun print() {
         var attrString = buildAttrs()
-        var xml = "<$name ${if(attrString != "") attrString else ""}>${text.ifEmpty { "" }}</$name>"
+        var xml = "<$name${if(attrString != "") attrString else ""}>${text.ifEmpty { "" }}</$name>"
         println(xml)
     }
 

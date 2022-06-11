@@ -1,4 +1,6 @@
 import Classes.*
+import Data.Room
+import Data.Student
 import Enumerations.Gender
 import Enumerations.RoomType
 import Enumerations.StudentType
@@ -124,9 +126,7 @@ fun main(args: Array<String>) {
 
     // Example --> build an XML document while filtering elements from another XML
     println("EXAMPLE 3")
-    //room.children.forEach { println(it) }
-    //val finalXML = room.buildXML() {x -> (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}}
-    val finalXML = room.buildXML() {x ->
+    val finalXML = room.buildXML { x ->
         if (x.name == "person") {
             (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}
         } else {
@@ -141,11 +141,6 @@ fun main(args: Array<String>) {
     val s2 = Student("catarina", 26, Gender.Female)
     val room2 = Room("C06.02", 50, RoomType.Medium, listOf(s1,s2))
     room2.listStudent += s2
-//    val entityName = c.findAnnotation<XmlName>()!!.name
-//    val entityHasNum = c.declaredMemberProperties.any { it.returnType.classifier.isEnum() }
-//    println("First entity name: $entityName")
-//    println("Entity has enum: $entityHasNum")
-//    println()
     val modelGenerator = ModelGenerator()
     val model = modelGenerator.createModel(room2)
     model.print()

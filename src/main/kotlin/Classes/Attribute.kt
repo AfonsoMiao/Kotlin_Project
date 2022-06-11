@@ -1,5 +1,3 @@
 package Classes
 
-class Attribute(var name:String, var attrValue:String) {
-
-}
+class Attribute(var name:String, var attrValue:String)

@@ -3,11 +3,10 @@ package Classes
 import Enumerations.Gender
 import Enumerations.RoomType
 import Enumerations.StudentType
-import XmlIgnore
-import XmlName
-import XmlTagContent
+import Annotations.XmlIgnore
+import Annotations.XmlName
+import Annotations.XmlTagContent
 import kotlin.reflect.KClass
-import kotlin.reflect.KClassifier
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*
 
@@ -25,7 +24,7 @@ class ModelGenerator {
     private fun createListObjects(l: List<*>, parent: CompositeEntity): List<Entity> {
         var list = mutableListOf<Entity>()
         l.forEach {
-            list += createModel(it!!, parent)!!
+            list += createModel(it!!, parent)
         }
 
         return list
