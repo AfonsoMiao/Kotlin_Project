@@ -1,8 +1,8 @@
-package Entities
+package Classes
 
 import Interfaces.Command
 
-class AddChildCommand(val c: Controller, val newEntity: CompositeEntity/**val newTagName: String*/ , val parent: CompositeEntity) : Command {
+class AddChildCommand(val c: Controller, val newEntity: CompositeEntity, val parent: CompositeEntity) : Command {
     override fun run() {
         c.addChild(newEntity, parent)
     }

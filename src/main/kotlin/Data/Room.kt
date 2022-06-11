@@ -1,3 +1,8 @@
+package Data
+
+import Annotations.XmlIgnore
+import Annotations.XmlName
+import Annotations.XmlTagContent
 import Enumerations.RoomType
 
 @XmlName("room")

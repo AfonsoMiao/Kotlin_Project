@@ -1,27 +1,12 @@
-package Entities
+package Classes
 
 import Enumerations.EventType
 import Interfaces.AttributeFrameSetup
-import Interfaces.RootComponentSetup
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import java.awt.event.*
 import javax.swing.*
 
-class RootComponent: RootComponentSetup {
-    override val name: String
-        get() = "Room"
-    override val listAttributes: MutableList<Attribute>
-        get() = mutableListOf(Attribute("sala reservada", "true"))
-    override fun getRootComponent(): CompositeEntity {
-        val root = CompositeEntity("Room", listAttributes)
-        CompositeEntity("Person1", attrs = mutableListOf(Attribute("Nome", "Afonso")), parent = root)
-        return root
-    }
-
-}
-
-//Load this classes into list
 class DescriptionFrame: AttributeFrameSetup {
     override val typeAttribute: String
         get() = "descrição"
@@ -198,24 +183,4 @@ class MandatoryFrame: AttributeFrameSetup {
         panel.add(checkBox)
         return panel
     }
-}
-
-
-interface Action {
-    val actionName: String
-    val parentName: String
-    fun execute(c: Controller, parent: CompositeEntity, undoStack: UndoStack)
-}
-
-class EventAdd: Action {
-    override val actionName: String
-        get() = "Event"
-
-    override val parentName: String
-        get() = "Room"
-
-    override fun execute(c: Controller, parent: CompositeEntity, undoStack: UndoStack) {
-        undoStack.execute(AddChildCommand(c, CompositeEntity(actionName, mutableListOf(Attribute("descrição", ""), Attribute("data", "1-January-2023"), Attribute("reservada", "true"))), parent))
-    }
-
 }

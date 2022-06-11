@@ -1,4 +1,4 @@
-package Entities
+package Classes
 
 import Enumerations.EventType
 import Interfaces.IObservable

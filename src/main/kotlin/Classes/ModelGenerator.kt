@@ -1,11 +1,11 @@
-package Entities
+package Classes
 
 import Enumerations.Gender
 import Enumerations.RoomType
 import Enumerations.StudentType
-import XmlIgnore
-import XmlName
-import XmlTagContent
+import Annotations.XmlIgnore
+import Annotations.XmlName
+import Annotations.XmlTagContent
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.*

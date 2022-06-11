@@ -1,9 +1,9 @@
 package Interfaces
 
-import Entities.Attribute
-import Entities.CompositeEntity
-import Entities.Controller
-import Entities.UndoStack
+import Classes.Attribute
+import Classes.CompositeEntity
+import Classes.Controller
+import Classes.UndoStack
 import Enumerations.EventType
 import javax.swing.JPanel
 

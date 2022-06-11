@@ -1,6 +1,11 @@
 package Interfaces
 
-interface Action {
+import Classes.CompositeEntity
+import Classes.Controller
+import Classes.UndoStack
 
-    fun execute()
+interface Action {
+    val actionName: String
+    val parentName: String
+    fun execute(c: Controller, parent: CompositeEntity, undoStack: UndoStack)
 }
