@@ -1,4 +1,4 @@
-package Classes
+package Entities
 
 import Interfaces.Command
 import java.util.*

@@ -1,5 +1,5 @@
-import Classes.Attribute
-import Classes.CompositeEntity
+package Entities
+
 import Enumerations.EventType
 import Interfaces.IObservable
 

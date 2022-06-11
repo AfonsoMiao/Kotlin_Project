@@ -1,5 +1,4 @@
-<room descrição="100" sala reservada="false">
-	<p1 Name="Afonso">
-		<age Value="21"></age>
-	</p1>
-</room>
+<Room>
+	<Event descrição="asfasf" data="1-January-2023" reservada="false"></Event>
+	<asfasfasfa></asfasfasfa>
+</Room>

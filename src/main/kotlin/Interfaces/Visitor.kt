@@ -1,7 +1,7 @@
 package Interfaces
 
-import Classes.CompositeEntity
-import Classes.SimpleEntity
+import Entities.CompositeEntity
+import Entities.SimpleEntity
 
 interface Visitor {
     fun visit(c: CompositeEntity): Boolean = true

@@ -1,7 +1,7 @@
 package Interfaces
 
-import Classes.Attribute
-import Classes.CompositeEntity
+import Entities.Attribute
+import Entities.CompositeEntity
 
 interface ComponentEvent {
 

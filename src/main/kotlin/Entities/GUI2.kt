@@ -1,19 +1,26 @@
-import Classes.*
-import Classes.Action
-import Classes.UndoStack
+package Entities
+
 import Enumerations.EventType
+import Interfaces.AttributeFrameSetup
 import Interfaces.Command
 import Interfaces.IObservable
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO
-import javafx.scene.Parent
+import Interfaces.RootComponentSetup
 
 import java.awt.*
 import java.awt.event.*
 import java.io.File
+import java.io.FileInputStream
+import java.util.*
 import javax.swing.*
 import javax.swing.border.CompoundBorder
-import javax.swing.text.View
-import kotlin.collections.List
+import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.typeOf
 
 class ComponentSkeleton2(val c: Controller, private val undoStack: UndoStack, private val attributesFrames: MutableList<AttributeFrameSetup>) : JPanel(), IObservable<ComponentSkeleton2.ComponentEvent> {
     interface ComponentEvent {
@@ -65,7 +72,7 @@ class ComponentSkeleton2(val c: Controller, private val undoStack: UndoStack, pr
                 for(a in e.attrs) {
                     var frame = attributesFrames.find { a.name.contains(it.typeAttribute) }
                     if(frame != null) {
-                        var panel = frame!!.getFrame(c, e, a, undoStack)
+                        var panel = frame.getFrame(c, e, a, undoStack)
                         listAttributes += panel
                         add(panel)
                     } else {
@@ -74,29 +81,31 @@ class ComponentSkeleton2(val c: Controller, private val undoStack: UndoStack, pr
                         var textField = JTextField(a.attrValue)
                         textField.addKeyListener(object: KeyAdapter() {
                             override fun keyReleased(k: KeyEvent?) {
-                                notifyObservers { it.editValueAttribute(e, a, (k!!.source as JTextField).getText()) }
+                                notifyObservers { it.editValueAttribute(e, a, (k!!.source as JTextField).text) }
                             }
                         })
                         panel.add(label)
                         panel.add(textField)
                         panel.addMouseListener(object: MouseAdapter() {
                             override fun mouseClicked(m: MouseEvent) {
-                                val popupmenu = JPopupMenu("Actions")
-                                val renameAttribute = JMenuItem("Rename Attribute ${a.name}")
-                                renameAttribute.addActionListener {
-                                    val text = JOptionPane.showInputDialog("New name")
-                                    notifyObservers { it.renameAttribute(e, a, text) }
-                                }
-                                popupmenu.add(renameAttribute)
+                                if (SwingUtilities.isRightMouseButton(m)) {
+                                    val popupmenu = JPopupMenu("Actions")
+                                    val renameAttribute = JMenuItem("Rename Attribute ${a.name}")
+                                    renameAttribute.addActionListener {
+                                        val text = JOptionPane.showInputDialog("New name")
+                                        notifyObservers { it.renameAttribute(e, a, text) }
+                                    }
+                                    popupmenu.add(renameAttribute)
 
-                                val removeAttribute = JMenuItem("Remove Attribute ${a.name}")
-                                removeAttribute.addActionListener {
-                                    notifyObservers { it.removeAttribute(e, a) }
-                                }
-                                popupmenu.add(removeAttribute)
+                                    val removeAttribute = JMenuItem("Remove Attribute ${a.name}")
+                                    removeAttribute.addActionListener {
+                                        notifyObservers { it.removeAttribute(e, a) }
+                                    }
+                                    popupmenu.add(removeAttribute)
 
-                                popupmenu.show(m.component, m.x, m.y)
-                            }
+                                    popupmenu.show(m.component, m.x, m.y)
+                                    }
+                                }
                         })
                         listAttributes += panel
                         add(panel)
@@ -230,28 +239,31 @@ class ComponentSkeleton2(val c: Controller, private val undoStack: UndoStack, pr
         var textField = JTextField(a.attrValue)
         textField.addKeyListener(object: KeyAdapter() {
             override fun keyReleased(e: KeyEvent?) {
-                notifyObservers { it.editValueAttribute(t, a, (e!!.source as JTextField).getText()) }
+                notifyObservers { it.editValueAttribute(t, a, (e!!.source as JTextField).text) }
             }
         })
         panel.add(label)
         panel.add(textField)
         panel.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                val popupmenu = JPopupMenu("Actions")
-                val renameAttribute = JMenuItem("Rename Attribute ${a.name}")
-                renameAttribute.addActionListener {
-                    val text = JOptionPane.showInputDialog("New name")
-                    notifyObservers { it.renameAttribute(t, a, text) }
-                }
-                popupmenu.add(renameAttribute)
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    val popupmenu = JPopupMenu("Actions")
+                    val renameAttribute = JMenuItem("Rename Attribute ${a.name}")
+                    renameAttribute.addActionListener {
+                        val text = JOptionPane.showInputDialog("New name")
+                        notifyObservers { it.renameAttribute(t, a, text) }
+                    }
+                    popupmenu.add(renameAttribute)
 
-                val removeAttribute = JMenuItem("Remove Attribute ${a.name}")
-                removeAttribute.addActionListener {
-                    notifyObservers { it.removeAttribute(t, a) }
-                }
-                popupmenu.add(removeAttribute)
+                    val removeAttribute = JMenuItem("Remove Attribute ${a.name}")
+                    removeAttribute.addActionListener {
+                        notifyObservers { it.removeAttribute(t, a) }
+                    }
+                    popupmenu.add(removeAttribute)
 
-                popupmenu.show(e.component, e.x, e.y)
+                    popupmenu.show(e.component, e.x, e.y)
+                }
+
             }
         })
         jComponent!!.listAttributes += panel
@@ -272,37 +284,34 @@ class ComponentSkeleton2(val c: Controller, private val undoStack: UndoStack, pr
 
     fun addTag(t: CompositeEntity, parent: CompositeEntity) {
         val jComponent = listComponents.find { it.entityName == parent.name }
-        println(parent.name)
-        println(t.name)
-        println(jComponent)
-        //val newComponent = Component(t, undoStack)
-        //listComponents += newComponent
         jComponent!!.add(Component(t, undoStack))
         revalidate()
         repaint()
     }
 }
 
-class WindowSkeleton2: JFrame("title") {
-    @InjectAdd
-    private var actions = mutableListOf<Action>(EventAdd())
-    @InjectAdd
-    private var attributesFrames = mutableListOf(DescriptionFrame(), DateFrame(), MandatoryFrame())
-    private lateinit var rootComponent: ComponentSkeleton2
+class Window: JFrame("title") {
+    @InjectAdd("action")
+    private var menuActions = mutableListOf<Action>()//(EventAdd())
+    @InjectAdd("attribute")
+    private var attributesFrames = mutableListOf<AttributeFrameSetup>()//(DescriptionFrame(), DateFrame(), MandatoryFrame())
+    @Inject
+    private lateinit var rootEntity: RootComponentSetup
     private lateinit var controller: Controller
     private val undoStack = UndoStack()
 
     init {
-        defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        size = Dimension(500, 500)
+        defaultCloseOperation = EXIT_ON_CLOSE
+        size = Dimension(1000, 1000)
     }
 
     fun open() {
-        val room = CompositeEntity("room", attrs = mutableListOf(Attribute("descrição", "100"), Attribute("sala reservada", "true")))
-        val p1 = CompositeEntity("p1", attrs = mutableListOf(Attribute("Name", "Afonso")) ,parent = room)
-        CompositeEntity("age", attrs = mutableListOf(Attribute("Value", "21")) ,parent=p1)
-        controller = Controller(room)
+//        val room = CompositeEntity("room", attrs = mutableListOf(Attribute("descrição", "100"), Attribute("sala reservada", "true")))
+//        val p1 = CompositeEntity("p1", attrs = mutableListOf(Attribute("Name", "Afonso")) ,parent = room)
+//        CompositeEntity("age", attrs = mutableListOf(Attribute("Value", "21")) ,parent=p1)
+//        controller = Classes.Controller(room)
         //val button =
+        controller = Controller(rootEntity.getRootComponent())
         val xmlButton = JButton("Save XML")
         xmlButton.addActionListener {
             val filename = JOptionPane.showInputDialog("Filename")
@@ -310,32 +319,75 @@ class WindowSkeleton2: JFrame("title") {
             println(xml)
             File("src/main/kotlin/Output/$filename.txt").writeText(xml)
         }
-        xmlButton.setBounds(50, 150, 100, 30);
+        xmlButton.setBounds(50, 150, 100, 30)
         add(xmlButton, BorderLayout.NORTH)
-        rootComponent = ComponentSkeleton2(controller, undoStack, attributesFrames)
+        var rootComponent = ComponentSkeleton2(controller, undoStack, attributesFrames)
         add(rootComponent)
-        actions.forEach {a ->
+        menuActions.forEach {a ->
             rootComponent.listComponents.forEach {c ->
-                println(c.e.name)
                 val item = JMenuItem(a.actionName)
                 if(c.e.name == a.parentName) {
                     item.addActionListener { a.execute(controller, c.e, undoStack) }
                 } else {
-                    item.isOpaque = true
+                    item.isEnabled = false
                 }
                 c.popupmenu.add(item)
             }
         }
-        //rootComponent.add(DateFrame().getFrame(controller, controller.data, undoStack))
         isVisible = true
 
     }
 }
 
-annotation class InjectAdd
+annotation class Inject
 
+annotation class InjectAdd(val name: String)
+
+class Injector {
+    fun create(c: KClass<*>): Window {
+        val file = File("C:\\Users\\afonso.miao\\IdeaProjects\\Kotlin_Project\\src\\main\\kotlin\\Entities\\di.properties")
+        val prop = Properties()
+        FileInputStream(file).use { prop.load(it) }
+        val obj = c.createInstance()
+        val className = "${c.simpleName}."
+        var classProperty: String = ""
+        c.declaredMemberProperties.filter { it.hasAnnotation<Inject>()}
+            .forEach {
+                classProperty = prop.getProperty(className + it.name)
+                val clazz: KClass<*> = Class.forName(classProperty).kotlin
+                it.isAccessible = true
+                (it as KMutableProperty<*>).setter.call(obj, clazz.createInstance())
+            }
+
+        c.declaredMemberProperties.filter { it.hasAnnotation<InjectAdd>() && it.findAnnotation<InjectAdd>()!!.name == "attribute"}
+            .forEach {
+                classProperty = prop.getProperty(className + it.name)
+                var actions = classProperty.split(",")
+                actions.forEach {x ->
+                    val clazz: KClass<*> = Class.forName(x).kotlin
+                    it.isAccessible = true
+                    val currentObj = clazz.createInstance()
+                    val lst = (it as KMutableProperty<*>).call(obj) as MutableList<AttributeFrameSetup>
+                    lst.add(currentObj as AttributeFrameSetup)
+                }
+            }
+        c.declaredMemberProperties.filter { it.hasAnnotation<InjectAdd>() && it.findAnnotation<InjectAdd>()!!.name == "action"}
+            .forEach {
+                classProperty = prop.getProperty(className + it.name)
+                var actions = classProperty.split(",")
+                actions.forEach {x ->
+                    val clazz: KClass<*> = Class.forName(x).kotlin
+                    it.isAccessible = true
+                    val currentObj = clazz.createInstance()
+                    val lst = (it as KMutableProperty<*>).call(obj) as MutableList<Action>
+                    lst.add(currentObj as Action)
+                }
+            }
+        return obj as Window
+    }
+}
 
 fun main() {
-    val w = WindowSkeleton2()
+    val w = Injector().create(Window::class)
     w.open()
 }

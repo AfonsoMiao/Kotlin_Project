@@ -1,0 +1,14 @@
+import Enumerations.Gender
+import Enumerations.StudentType
+
+@XmlName("student")
+data class Student(
+    @XmlIgnore
+    val name: String,
+    @XmlTagContent
+    val age: Int,
+    @XmlTagContent
+    val gender: Gender? = null,
+    @XmlTagContent
+    val type: StudentType? = null
+)

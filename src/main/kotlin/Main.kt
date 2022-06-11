@@ -1,4 +1,4 @@
-import Classes.*
+import Entities.*
 import Enumerations.Gender
 import Enumerations.RoomType
 import Enumerations.StudentType
@@ -126,7 +126,7 @@ fun main(args: Array<String>) {
     println("EXAMPLE 3")
     //room.children.forEach { println(it) }
     //val finalXML = room.buildXML() {x -> (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}}
-    val finalXML = room.buildXML() {x ->
+    val finalXML = room.buildXML { x ->
         if (x.name == "person") {
             (x as CompositeEntity).children.any { it.name == "gender" && it.text == "male"}
         } else {
