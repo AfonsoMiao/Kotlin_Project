@@ -3,6 +3,7 @@ package Classes
 import Enumerations.EventType
 import Interfaces.AttributeFrameSetup
 import Interfaces.Command
+import Interfaces.ComponentEvent
 import Interfaces.IObservable
 import java.awt.Color
 import java.awt.Font
@@ -15,17 +16,7 @@ import java.awt.event.MouseEvent
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 
-class ComponentSkeleton (val c: Controller, private val undoStack: UndoStack, private val attributesFrames: MutableList<AttributeFrameSetup>) : JPanel(), IObservable<ComponentSkeleton.ComponentEvent> {
-        interface ComponentEvent {
-            fun addTag(parent: CompositeEntity, newEntity: CompositeEntity) {}
-            fun removeTag(parent: CompositeEntity, entity: CompositeEntity) {}
-            fun renameTag(entity: CompositeEntity, newTagName: String) {}
-
-            fun addAttribute(entity: CompositeEntity, attName: String, attValue: String) {}
-            fun removeAttribute(entity: CompositeEntity, a: Attribute) {}
-            fun renameAttribute(entity: CompositeEntity, a: Attribute, newName: String) {}
-            fun editValueAttribute(entity: CompositeEntity, a: Attribute, value: String) {}
-        }
+class ComponentSkeleton (val c: Controller, private val undoStack: UndoStack, private val attributesFrames: MutableList<AttributeFrameSetup>) : JPanel(), IObservable<ComponentEvent> {
 
         override val observers: MutableList<ComponentEvent> = mutableListOf()
         val listComponents: MutableList<Component> = mutableListOf()
